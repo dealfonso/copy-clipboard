@@ -26,7 +26,7 @@
 	if (typeof exports === "undefined") {
 		var exports = {};
 	}
-	const VERSION = "1.0.0";
+	const VERSION = "1.0.1";
 	const DEFAULT_OPTIONS = {
 		target: null,
 		targetChildren: null,
@@ -256,6 +256,62 @@
 			copyable.addEventListener("click", copyHandler);
 		}
 	}
+
+	function handlePaste(event, options = {}) {
+		const DEFAULT_OPTIONS = {
+			onPasteImage: file => {},
+			onPasteText: text => {},
+			onError: error => console.error(error)
+		};
+		options = Object.assign({}, DEFAULT_OPTIONS, options);
+		let clipboardData = event.clipboardData || window.clipboardData;
+		if (!clipboardData) {
+			if (typeof options.onError === "function") {
+				options.onError("No clipboard data available. Please ensure you have copied something to the clipboard before pasting.");
+			}
+			return false;
+		}
+		if (clipboardData.items) {
+			for (var i = 0; i < clipboardData.items.length; i++) {
+				var item = clipboardData.items[i];
+				if (item.kind === "file" && item.type.startsWith("image/")) {
+					var file = item.getAsFile();
+					if (!file) {
+						if (typeof options.onError === "function") {
+							options.onError("No file found in clipboard data. Please ensure you have copied an image to the clipboard before pasting.");
+						}
+						return false;
+					}
+					if (typeof options.onPasteImage === "function") {
+						options.onPasteImage(file);
+					}
+					return true;
+					break;
+				} else if (item.kind === "string" && item.type === "text/plain") {
+					item.getAsString(function (text) {
+						if (typeof options.onPasteText === "function") {
+							options.onPasteText(text);
+						}
+					});
+					return true;
+					break;
+				}
+			}
+		} else {
+			var pastedData = clipboardData.getData("Text");
+			if (pastedData) {
+				if (typeof options.onPasteText === "function") {
+					options.onPasteText(pastedData);
+				}
+				return true;
+			} else {
+				if (typeof options.onError === "function") {
+					options.onError("No text data found in clipboard data. Please ensure you have copied text to the clipboard before pasting.");
+				}
+				return false;
+			}
+		}
+	}
 	navigator.permissions.query({
 		name: "clipboard-write"
 	}).then(result => {
@@ -268,6 +324,9 @@
 			};
 		}
 		exports.copyClipboard.version = VERSION;
+		exports.copyClipboard.copyTextToClipboard = copyTextToClipboard;
+		exports.copyClipboard.copyImageToClipboard = copyImageToClipboard;
+		exports.copyClipboard.handlePaste = handlePaste;
 	});
 	document.addEventListener("DOMContentLoaded", () => {
 		const copyableElements = document.querySelectorAll("[data-copy-target],[data-copy-value],[data-copy-target-children]");

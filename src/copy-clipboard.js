@@ -2,7 +2,7 @@ if (typeof exports === 'undefined') {
     var exports = {}
 }
 
-const VERSION = '1.0.0'; // Version of the copyClipboard function
+const VERSION = '1.0.1'; // Version of the copyClipboard function
 
 const DEFAULT_OPTIONS = {
     // The selector for the elements to make copyable (i.e. the element whose content will be copied)
@@ -312,6 +312,69 @@ function copyClipboard(element, options = {}) {
     }
 }
 
+function handlePaste(event, options = {}) {
+
+    const DEFAULT_OPTIONS = {
+        onPasteImage: (file) => {},
+        onPasteText: (text) => {},
+        onError: (error) => console.error(error),
+    }
+
+    options = Object.assign({}, DEFAULT_OPTIONS, options);
+
+    // Get the clipboard data
+    let clipboardData = event.clipboardData || window.clipboardData;
+    if (!clipboardData) {
+        if (typeof options.onError === 'function') {
+            options.onError("No clipboard data available. Please ensure you have copied something to the clipboard before pasting.");
+        }
+        return false;
+    }
+
+    // Check if the clipboard data is an image
+    if (clipboardData.items) {
+        for (var i = 0; i < clipboardData.items.length; i++) {
+            var item = clipboardData.items[i];
+            if (item.kind === "file" && item.type.startsWith("image/")) {
+                var file = item.getAsFile();
+                if (!file) {
+                    if (typeof options.onError === 'function') {
+                        options.onError("No file found in clipboard data. Please ensure you have copied an image to the clipboard before pasting.");
+                    }
+                    return false;
+                }
+
+                if (typeof options.onPasteImage === 'function') {
+                    options.onPasteImage(file);
+                }
+                return true;
+                break;
+            } else if (item.kind === "string" && item.type === "text/plain") {
+                item.getAsString(function (text) {
+                    if (typeof options.onPasteText === 'function') {
+                        options.onPasteText(text);
+                    }
+                });
+                return true;
+                break;
+            }
+        }
+    } else {
+        var pastedData = clipboardData.getData("Text");
+        if (pastedData) {
+            if (typeof options.onPasteText === 'function') {
+                options.onPasteText(pastedData);
+            }
+            return true;
+        } else {
+            if (typeof options.onError === 'function') {
+                options.onError("No text data found in clipboard data. Please ensure you have copied text to the clipboard before pasting.");
+            }
+            return false;
+        }
+    }    
+}
+
 navigator.permissions.query({ name: "clipboard-write" }).then((result) => {
     if (result.state === "granted" || result.state === "prompt") {
         exports.copyClipboard = copyClipboard;
@@ -322,6 +385,9 @@ navigator.permissions.query({ name: "clipboard-write" }).then((result) => {
         }
     }
     exports.copyClipboard.version = VERSION; // Export the version of the copyClipboard function
+    exports.copyClipboard.copyTextToClipboard = copyTextToClipboard;
+    exports.copyClipboard.copyImageToClipboard = copyImageToClipboard;
+    exports.copyClipboard.handlePaste = handlePaste;
 });
 
 document.addEventListener('DOMContentLoaded', () => {

@@ -9,6 +9,7 @@ A lightweight JavaScript library that enables copying content to clipboard with 
 - Support for copying from specific elements
 - Automatic setup for elements with specific data attributes
 - Lightweight with no dependencies
+- Handle paste events for images and text
 
 ## Installation
 
@@ -74,6 +75,69 @@ copyClipboard('#container', {
 | `value` | String\|Number\|HTMLElement\|Array | `null` | Specific value to copy instead of element content |
 | `suppressWarnings` | Boolean | `true` | If `true`, doesn't show warnings in console |
 | `debug` | Boolean | `false` | If `true`, shows debug messages in console |
+
+## API Functions
+
+The library exports several utility functions that can be used independently:
+
+### copyTextToClipboard(text)
+
+Copies text content to the clipboard.
+
+**Parameters:**
+- `text` (String): The text to copy to the clipboard
+
+**Example:**
+```javascript
+copyClipboard.copyTextToClipboard('Hello, world!');
+```
+
+### copyImageToClipboard(imageElement)
+
+Copies an image element to the clipboard as a blob.
+
+**Parameters:**
+- `imageElement` (HTMLImageElement): The image element to copy
+
+**Example:**
+```javascript
+const img = document.querySelector('#myImage');
+copyClipboard.copyImageToClipboard(img);
+```
+
+### handlePaste(event, options)
+
+Handles paste events to detect pasted images or text from the clipboard.
+
+**Parameters:**
+- `event` (ClipboardEvent): The paste event object
+- `options` (Object): Configuration options for handling paste
+
+**Options:**
+- `onPasteImage` (Function): Callback function called when an image is pasted. Receives the image file as parameter
+- `onPasteText` (Function): Callback function called when text is pasted. Receives the text as parameter
+- `onError` (Function): Callback function called when an error occurs. Receives the error message as parameter
+
+**Returns:** Boolean indicating if the paste was handled successfully
+
+**Example:**
+```javascript
+document.addEventListener('paste', function(event) {
+  copyClipboard.handlePaste(event, {
+    onPasteImage: function(file) {
+      console.log('Image pasted:', file.name);
+      // Handle the pasted image file
+    },
+    onPasteText: function(text) {
+      console.log('Text pasted:', text);
+      // Handle the pasted text
+    },
+    onError: function(error) {
+      console.error('Paste error:', error);
+    }
+  });
+});
+```
 
 ## Data Attributes
 
@@ -151,6 +215,26 @@ document.getElementById('copyButton').addEventListener('click', function() {
 });
 ```
 
+### Handle paste events
+
+This is an example of how to handle paste events to copy images or text from the clipboard:
+
+```html
+<textarea id="pasteArea" placeholder="Paste content here..."></textarea>
+<script>
+document.getElementById('pasteArea').addEventListener('paste', function(event) {
+  copyClipboard.handlePaste(event, {
+    onPasteImage: function(file) {
+      alert('Image pasted: ' + file.name);
+    },
+    onPasteText: function(text) {
+      this.value = text;
+    }.bind(this)
+  });
+});
+</script>
+```
+
 ## License
 
-[MIT](LICENSE)
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
