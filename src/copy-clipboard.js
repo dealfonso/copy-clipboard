@@ -2,7 +2,7 @@ if (typeof exports === 'undefined') {
     var exports = {}
 }
 
-const VERSION = '1.0.1'; // Version of the copyClipboard function
+const VERSION = '1.0.2'; // Version of the copyClipboard function
 
 const DEFAULT_OPTIONS = {
     // The selector for the elements to make copyable (i.e. the element whose content will be copied)
@@ -108,9 +108,6 @@ async function copyImageToClipboard(imageElement) {
             return new Promise((resolve, reject) => {
                 canvas.toBlob((blob) => {
                     canvas.remove(); // Clean up the canvas element
-                    if (removeImage) {
-                        image.remove(); // Clean up the temporary image element
-                    }
                     if (blob) {
                         resolve(blob);
                     } else {
@@ -120,10 +117,23 @@ async function copyImageToClipboard(imageElement) {
             });
         }
 
+        if (typeof imageElement === 'string') {
+            // If the imageElement is a string, we assume it's a URL
+            let image = new Image();
+            image.crossOrigin = 'anonymous'; // Ensure the image can be accessed if it's from a different origin
+            image.src = imageElement;
+            return new Promise((resolve, reject) => {
+                image.onload = () => getBlobFromImage(image).then(resolve).catch(reject);
+                image.onerror = (err) => reject(new Error(`Failed to load image: ${err.message}`));
+            });
+        }
+
+        if (!(imageElement instanceof HTMLImageElement)) {
+            throw new Error('Provided element is not an image');
+        }
+
         let image = imageElement;
-        let removeImage = false;
         if (changeCrossOrigin) {
-            removeImage = true;
             image = new Image();
             image.crossOrigin = 'anonymous'; // Ensure the image can be accessed if it's from a different origin
             image.src = imageElement.src;
@@ -137,7 +147,6 @@ async function copyImageToClipboard(imageElement) {
     }
 
     let blob = null;
-
     try {
         blob = await getImage(imageElement, false);
     } catch (err) {

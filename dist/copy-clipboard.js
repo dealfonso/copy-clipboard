@@ -26,7 +26,7 @@
 	if (typeof exports === "undefined") {
 		var exports = {};
 	}
-	const VERSION = "1.0.1";
+	const VERSION = "1.0.2";
 	const DEFAULT_OPTIONS = {
 		target: null,
 		targetChildren: null,
@@ -90,9 +90,6 @@
 				return new Promise((resolve, reject) => {
 					canvas.toBlob(blob => {
 						canvas.remove();
-						if (removeImage) {
-							image.remove();
-						}
 						if (blob) {
 							resolve(blob);
 						} else {
@@ -101,10 +98,20 @@
 					}, "image/png");
 				});
 			}
+			if (typeof imageElement === "string") {
+				let image = new Image();
+				image.crossOrigin = "anonymous";
+				image.src = imageElement;
+				return new Promise((resolve, reject) => {
+					image.onload = () => getBlobFromImage(image).then(resolve).catch(reject);
+					image.onerror = err => reject(new Error(`Failed to load image: ${err.message}`));
+				});
+			}
+			if (!(imageElement instanceof HTMLImageElement)) {
+				throw new Error("Provided element is not an image");
+			}
 			let image = imageElement;
-			let removeImage = false;
 			if (changeCrossOrigin) {
-				removeImage = true;
 				image = new Image();
 				image.crossOrigin = "anonymous";
 				image.src = imageElement.src;
