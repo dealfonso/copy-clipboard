@@ -70,9 +70,9 @@ copyClipboard('#container', {
 | `target` | String | `null` | Selector for elements whose content will be copied |
 | `targetChildren` | String | `null` | Selector for children of the element that will be copied |
 | `multiple` | Boolean | `true` | If `false`, only copies the first matching element |
-| `joinText` | String | `\n` | Text to join multiple copied elements (if `copyFirst` is `false`) |
+| `joinText` | String | `\n` | Text to join multiple copied elements (if `multiple` is `true`) |
 | `images` | Boolean | `true` | If `true`, allows copying images to clipboard |
-| `value` | String\|Number\|HTMLElement\|Array | `null` | Specific value to copy instead of element content |
+| `value` | Any | `null` | Specific value to copy instead of element content |
 | `suppressWarnings` | Boolean | `true` | If `true`, doesn't show warnings in console |
 | `debug` | Boolean | `false` | If `true`, shows debug messages in console |
 
@@ -97,7 +97,7 @@ copyClipboard.copyTextToClipboard('Hello, world!');
 Copies an image element to the clipboard as a blob.
 
 **Parameters:**
-- `imageElement` (HTMLImageElement): The image element to copy
+- `imageElement` (HTMLImageElement|string): The image element to copy. If it is a string, it will be assumed to be an URL of the image and it will be fetched using a new `Image` object.
 
 **Example:**
 ```javascript
@@ -146,9 +146,9 @@ You can configure all the above options using HTML data attributes with the `dat
 ```html
 <button 
   data-copy-target="#myContent"
-  data-copy-copy-first="false"
+  data-copy-multiple="true"
   data-copy-join-text=", "
-  data-copy-copy-images="true"
+  data-copy-images="true"
   data-copy-suppress-warnings="false"
   data-copy-debug="true">
   Copy all
@@ -202,7 +202,7 @@ This library uses the modern Clipboard API, so it's compatible with modern brows
   <p class="copyable">Paragraph 1</p>
   <p class="copyable">Paragraph 2</p>
 </div>
-<button data-copy-target=".copyable" data-copy-copy-first="false">Copy all paragraphs</button>
+<button data-copy-target=".copyable" data-copy-multiple="true">Copy all paragraphs</button>
 ```
 
 ### Copy content programmatically
